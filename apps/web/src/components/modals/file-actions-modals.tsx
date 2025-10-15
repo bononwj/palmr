@@ -109,7 +109,9 @@ export function FileActionsModals({
             </DialogTitle>
           </DialogHeader>
           <DialogDescription>
-            <p className="text-base font-semibold mb-2 text-foreground">{t("fileActions.deleteConfirmation")}</p>
+            <p className="text-base font-semibold mb-2 text-foreground">
+              {t("fileActions.deleteConfirmation", { fileName: fileToDelete?.name || "" })}
+            </p>
             <p>
               {(fileToDelete?.name &&
                 (fileToDelete.name.length > 50 ? fileToDelete.name.substring(0, 50) + "..." : fileToDelete.name)) ||

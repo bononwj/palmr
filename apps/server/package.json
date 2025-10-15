@@ -40,7 +40,7 @@
     "@fastify/static": "^8.2.0",
     "@fastify/swagger": "^9.5.1",
     "@fastify/swagger-ui": "^5.2.3",
-    "@prisma/client": "^6.11.0",
+    "@prisma/client": "^6.17.1",
     "@scalar/fastify-api-reference": "^1.32.1",
     "@types/crypto-js": "^4.2.2",
     "bcryptjs": "^2.4.3",
@@ -72,7 +72,7 @@
     "eslint-plugin-prettier": "5.5.1",
     "prettier": "3.6.2",
     "prettier-plugin-sort-json": "4.1.1",
-    "prisma": "^6.3.1",
+    "prisma": "^6.17.1",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"

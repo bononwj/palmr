@@ -1,10 +1,6 @@
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 
-import packageJson from "../../../../../../package.json";
-
-const { version } = packageJson;
-
 export function TransparentFooter() {
   const t = useTranslations();
 
@@ -14,15 +10,11 @@ export function TransparentFooter() {
         <Link
           target="_blank"
           className="flex items-center gap-1 text-white/80 hover:text-primary transition-colors"
-          href="https://kyantech.com.br"
+          href="https://www.yipai360.com"
           title={t("footer.kyanHomepage")}
         >
-          <span className="text-white/70 text-xs sm:text-sm">{t("footer.poweredBy")}</span>
-          <p className="text-primary text-xs sm:text-sm font-medium cursor-pointer hover:text-primary/80">
-            Kyantech Solutions
-          </p>
+          <p className="text-primary text-xs sm:text-sm font-medium cursor-pointer hover:text-primary/80">一拍即传</p>
         </Link>
-        <span className="text-white text-[11px] mt-1">v{version}</span>
       </div>
     </footer>
   );

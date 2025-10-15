@@ -164,7 +164,7 @@ export class ChunkedUploader {
       "X-Total-Chunks": totalChunks.toString(),
       "X-Chunk-Size": chunkSize.toString(),
       "X-Total-Size": totalSize.toString(),
-      "X-File-Name": fileName,
+      "X-File-Name": encodeURIComponent(fileName),
       "X-Is-Last-Chunk": isLastChunk.toString(),
     };
 

@@ -117,13 +117,15 @@ export class FilesystemController {
       return null;
     }
 
+    const decodedFileName = decodeURIComponent(fileName);
+
     const metadata = {
       fileId,
       chunkIndex: parseInt(chunkIndex, 10),
       totalChunks: parseInt(totalChunks, 10),
       chunkSize: parseInt(chunkSize, 10),
       totalSize: parseInt(totalSize, 10),
-      fileName,
+      fileName: decodedFileName,
       isLastChunk: isLastChunk === "true",
     };
 
