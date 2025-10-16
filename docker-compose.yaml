@@ -1,6 +1,6 @@
 services:
   palmr:
-    image: kyantech/palmr:latest
+    image: cn-hz-acr-registry.cn-hangzhou.cr.aliyuncs.com/yipai/palmr:latest
     container_name: palmr
     environment:
       # Optional: Uncomment and configure as needed (if you don`t use, you can remove)

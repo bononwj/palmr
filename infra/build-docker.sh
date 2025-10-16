@@ -1,38 +1,61 @@
 #!/bin/bash
 
-echo "🏷️  Please enter a tag for the build (e.g., v1.0.0, production, beta):"
-read -p "Tag: " TAG
+# 阿里云容器镜像服务配置
+REGISTRY="cn-hz-acr-registry.cn-hangzhou.cr.aliyuncs.com/yipai"
+IMAGE_NAME="palmr"
 
-if [ -z "$TAG" ]; then
-    echo "❌ Error: Tag cannot be empty"
-    echo "Please run the script again and provide a valid tag"
+# 从根目录 package.json 读取版本号
+VERSION=$(grep -o '"version": "[^"]*"' package.json | cut -d'"' -f4)
+
+if [ -z "$VERSION" ]; then
+    echo "❌ Error: Cannot read version from package.json"
     exit 1
 fi
 
-echo "🚀 Building Palmr Unified Image for AMD64 and ARM..."
-echo "📦 Building tags: latest and $TAG"
+echo "🏷️  Current version: $VERSION"
+echo "🏷️  Please enter a tag for the build (press Enter to use version $VERSION, or enter custom tag):"
+read -p "Tag (default: $VERSION): " TAG
 
+# 如果用户没有输入，使用版本号作为 tag
+if [ -z "$TAG" ]; then
+    TAG=$VERSION
+fi
+
+echo ""
+echo "🚀 Building Palmr Unified Image for AMD64 and ARM..."
+echo "📦 Registry: $REGISTRY"
+echo "📦 Image: $IMAGE_NAME"
+echo "📦 Building tags: latest and $TAG"
+echo ""
+
+# 创建或使用现有的 buildx builder
 docker buildx create --name palmr-builder --use 2>/dev/null || docker buildx use palmr-builder
 
+# 构建多平台镜像并推送
 docker buildx build \
     --platform linux/amd64,linux/arm64 \
     --no-cache \
-    -t kyantech/palmr:latest \
-    -t kyantech/palmr:$TAG \
+    -t ${REGISTRY}/${IMAGE_NAME}:latest \
+    -t ${REGISTRY}/${IMAGE_NAME}:${TAG} \
     --push \
     .
 
 if [ $? -eq 0 ]; then
+    echo ""
     echo "✅ Multi-platform build completed successfully!"
     echo ""
     echo "Built for platforms: linux/amd64, linux/arm64"
-    echo "Built tags: palmr:latest and palmr:$TAG"
+    echo "Built images:"
+    echo "  - ${REGISTRY}/${IMAGE_NAME}:latest"
+    echo "  - ${REGISTRY}/${IMAGE_NAME}:${TAG}"
+    echo ""
+    echo "To pull the image on target machine:"
+    echo "  docker pull ${REGISTRY}/${IMAGE_NAME}:latest"
     echo ""
     echo "Access points:"
-    echo "- API: http://localhost:3333"
-    echo "- Web App: http://localhost:5487"
+    echo "  - API: http://localhost:3333"
+    echo "  - Web App: http://localhost:5487"
     echo ""
-    echo "Read the docs for more information"
 else
     echo "❌ Build failed!"
     exit 1
