@@ -24,6 +24,8 @@ export class AuthService {
     }
 
     const user = await this.userRepository.findUserByEmailOrUsername(data.emailOrUsername);
+    console.log("user", user);
+
     if (!user) {
       throw new Error("Invalid credentials");
     }

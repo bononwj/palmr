@@ -55,15 +55,12 @@ export class FolderController {
           parentId: input.parentId,
           userId,
         },
-        include: {
-          _count: {
-            select: {
-              files: true,
-              children: true,
-            },
-          },
-        },
       });
+
+      const [filesCount, childrenCount] = await Promise.all([
+        prisma.file.count({ where: { folderId: folderRecord.id } }),
+        prisma.folder.count({ where: { parentId: folderRecord.id } }),
+      ]);
 
       const totalSize = await this.folderService.calculateFolderSize(folderRecord.id, userId);
 
@@ -77,7 +74,7 @@ export class FolderController {
         createdAt: folderRecord.createdAt,
         updatedAt: folderRecord.updatedAt,
         totalSize: totalSize.toString(),
-        _count: folderRecord._count,
+        _count: { files: filesCount, children: childrenCount },
       };
 
       return reply.status(201).send({
@@ -152,14 +149,6 @@ export class FolderController {
       if (recursive) {
         folders = await prisma.folder.findMany({
           where: { userId },
-          include: {
-            _count: {
-              select: {
-                files: true,
-                children: true,
-              },
-            },
-          },
           orderBy: [{ name: "asc" }],
         });
       } else {
@@ -170,14 +159,6 @@ export class FolderController {
             userId,
             parentId: targetParentId,
           },
-          include: {
-            _count: {
-              select: {
-                files: true,
-                children: true,
-              },
-            },
-          },
           orderBy: [{ name: "asc" }],
         });
       }
@@ -185,6 +166,10 @@ export class FolderController {
       const foldersResponse = await Promise.all(
         folders.map(async (folder) => {
           const totalSize = await this.folderService.calculateFolderSize(folder.id, userId);
+          const [filesCount, childrenCount] = await Promise.all([
+            prisma.file.count({ where: { folderId: folder.id } }),
+            prisma.folder.count({ where: { parentId: folder.id } }),
+          ]);
           return {
             id: folder.id,
             name: folder.name,
@@ -195,7 +180,7 @@ export class FolderController {
             createdAt: folder.createdAt,
             updatedAt: folder.updatedAt,
             totalSize: totalSize.toString(),
-            _count: folder._count,
+            _count: { files: filesCount, children: childrenCount },
           };
         })
       );
@@ -249,15 +234,12 @@ export class FolderController {
       const updatedFolder = await prisma.folder.update({
         where: { id },
         data: updateData,
-        include: {
-          _count: {
-            select: {
-              files: true,
-              children: true,
-            },
-          },
-        },
       });
+
+      const [updatedFilesCount, updatedChildrenCount] = await Promise.all([
+        prisma.file.count({ where: { folderId: updatedFolder.id } }),
+        prisma.folder.count({ where: { parentId: updatedFolder.id } }),
+      ]);
 
       const totalSize = await this.folderService.calculateFolderSize(updatedFolder.id, userId);
 
@@ -271,7 +253,7 @@ export class FolderController {
         createdAt: updatedFolder.createdAt,
         updatedAt: updatedFolder.updatedAt,
         totalSize: totalSize.toString(),
-        _count: updatedFolder._count,
+        _count: { files: updatedFilesCount, children: updatedChildrenCount },
       };
 
       return reply.send({
@@ -326,15 +308,12 @@ export class FolderController {
       const updatedFolder = await prisma.folder.update({
         where: { id },
         data: { parentId: validatedInput.parentId },
-        include: {
-          _count: {
-            select: {
-              files: true,
-              children: true,
-            },
-          },
-        },
       });
+
+      const [mvFilesCount, mvChildrenCount] = await Promise.all([
+        prisma.file.count({ where: { folderId: updatedFolder.id } }),
+        prisma.folder.count({ where: { parentId: updatedFolder.id } }),
+      ]);
 
       const totalSize = await this.folderService.calculateFolderSize(updatedFolder.id, userId);
 
@@ -348,7 +327,7 @@ export class FolderController {
         createdAt: updatedFolder.createdAt,
         updatedAt: updatedFolder.updatedAt,
         totalSize: totalSize.toString(),
-        _count: updatedFolder._count,
+        _count: { files: mvFilesCount, children: mvChildrenCount },
       };
 
       return reply.send({

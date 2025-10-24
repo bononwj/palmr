@@ -347,12 +347,32 @@ async function main() {
       continue;
     }
 
-    await prisma.appConfig.create({
-      data: config,
+    await prisma.$runCommandRaw({
+      update: "app_configs",
+      updates: [
+        {
+          q: { key: config.key },
+          u: { $setOnInsert: { ...config, createdAt: new Date(), updatedAt: new Date() } },
+          upsert: true,
+        },
+      ],
     });
 
     console.log(`✅ Created configuration: ${config.key}`);
     createdCount++;
+  }
+
+  // Normalize Date fields to BSON Date (fix records saved as strings)
+  try {
+    await prisma.$runCommandRaw({
+      update: "app_configs",
+      updates: [
+        { q: { createdAt: { $type: "string" } }, u: [{ $set: { createdAt: { $toDate: "$createdAt" } } }], multi: true },
+        { q: { updatedAt: { $type: "string" } }, u: [{ $set: { updatedAt: { $toDate: "$updatedAt" } } }], multi: true },
+      ],
+    });
+  } catch (e) {
+    console.warn("⚠️  Skipped app_configs date normalization:", e?.message || e);
   }
 
   console.log("\n📊 Seed Summary:");
@@ -378,12 +398,32 @@ async function main() {
       continue;
     }
 
-    await prisma.authProvider.create({
-      data: provider,
+    await prisma.$runCommandRaw({
+      update: "auth_providers",
+      updates: [
+        {
+          q: { name: provider.name },
+          u: { $setOnInsert: { ...provider, createdAt: new Date(), updatedAt: new Date() } },
+          upsert: true,
+        },
+      ],
     });
 
     console.log(`✅ Created auth provider: ${provider.displayName} (${provider.name})`);
     providersCreatedCount++;
+  }
+
+  // Normalize Date fields in auth_providers
+  try {
+    await prisma.$runCommandRaw({
+      update: "auth_providers",
+      updates: [
+        { q: { createdAt: { $type: "string" } }, u: [{ $set: { createdAt: { $toDate: "$createdAt" } } }], multi: true },
+        { q: { updatedAt: { $type: "string" } }, u: [{ $set: { updatedAt: { $toDate: "$updatedAt" } } }], multi: true },
+      ],
+    });
+  } catch (e) {
+    console.warn("⚠️  Skipped auth_providers date normalization:", e?.message || e);
   }
 
   console.log("\n📊 Auth Providers Summary:");

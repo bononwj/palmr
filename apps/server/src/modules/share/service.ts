@@ -194,33 +194,25 @@ export class ShareService {
     }
 
     const deleted = await prisma.$transaction(async (tx) => {
-      await tx.share.update({
-        where: { id },
-        data: {
-          files: {
-            set: [],
-          },
-        },
-      });
+      await tx.shareFile.deleteMany({ where: { shareId: id } });
+      await tx.shareFolder.deleteMany({ where: { shareId: id } });
+      await tx.shareRecipient.deleteMany({ where: { shareId: id } });
 
       const deletedShare = await tx.share.delete({
         where: { id },
-        include: {
-          security: true,
-          files: true,
-        },
+        include: { security: true },
       });
 
       if (deletedShare.security) {
-        await tx.shareSecurity.delete({
-          where: { id: deletedShare.security.id },
-        });
+        await tx.shareSecurity.delete({ where: { id: deletedShare.security.id } });
       }
 
-      return deletedShare;
+      return deletedShare as any;
     });
 
-    return ShareResponseSchema.parse(await this.formatShareResponse(deleted));
+    return ShareResponseSchema.parse(
+      await this.formatShareResponse({ ...deleted, files: [], folders: [], recipients: [] })
+    );
   }
 
   async listUserShares(userId: string) {
@@ -375,18 +367,7 @@ export class ShareService {
   }
 
   async getShareByAlias(alias: string, password?: string) {
-    const shareAlias = await prisma.shareAlias.findUnique({
-      where: { alias },
-      include: {
-        share: {
-          include: {
-            security: true,
-            files: true,
-            recipients: true,
-          },
-        },
-      },
-    });
+    const shareAlias = await prisma.shareAlias.findUnique({ where: { alias } });
 
     if (!shareAlias) {
       throw new Error("Share not found");

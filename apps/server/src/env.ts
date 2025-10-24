@@ -15,7 +15,7 @@ const envSchema = z.object({
   S3_REJECT_UNAUTHORIZED: z.union([z.literal("true"), z.literal("false")]).default("true"),
   PRESIGNED_URL_EXPIRATION: z.string().optional().default("3600"),
   SECURE_SITE: z.union([z.literal("true"), z.literal("false")]).default("false"),
-  DATABASE_URL: z.string().optional().default("file:/app/server/prisma/palmr.db"),
+  DATABASE_URL: z.string().optional().default("mongodb://localhost:27017/palmr"),
   DOWNLOAD_MAX_CONCURRENT: z
     .string()
     .optional()

@@ -11,12 +11,20 @@ export interface IShareRepository {
         files: any[];
         folders: any[];
         recipients: { email: string }[];
+        alias: any | null;
       })
     | null
   >;
-  findShareBySecurityId(
-    securityId: string
-  ): Promise<(Share & { security: ShareSecurity; files: any[]; folders: any[] }) | null>;
+  findShareBySecurityId(securityId: string): Promise<
+    | (Share & {
+        security: ShareSecurity;
+        files: any[];
+        folders: any[];
+        recipients: { email: string }[];
+        alias: any | null;
+      })
+    | null
+  >;
   updateShare(id: string, data: Partial<Share>): Promise<Share>;
   updateShareSecurity(id: string, data: Partial<ShareSecurity>): Promise<ShareSecurity>;
   deleteShare(id: string): Promise<Share>;
@@ -31,7 +39,9 @@ export interface IShareRepository {
   removeRecipients(shareId: string, emails: string[]): Promise<void>;
   findSharesByUserId(
     userId: string
-  ): Promise<(Share & { security: ShareSecurity; files: any[]; folders: any[]; recipients: any[]; alias: any })[]>;
+  ): Promise<
+    (Share & { security: ShareSecurity; files: any[]; folders: any[]; recipients: any[]; alias: any | null })[]
+  >;
 }
 
 export class PrismaShareRepository implements IShareRepository {
@@ -44,90 +54,95 @@ export class PrismaShareRepository implements IShareRepository {
     const validFolders = (folders ?? []).filter((id) => id && id.trim().length > 0);
     const validRecipients = (recipients ?? []).filter((email) => email && email.trim().length > 0);
 
-    return prisma.share.create({
+    const created = await prisma.share.create({
       data: {
         ...shareData,
         expiration: expiration ? new Date(expiration) : null,
-        files:
-          validFiles.length > 0
-            ? {
-                connect: validFiles.map((id) => ({ id })),
-              }
-            : undefined,
-        folders:
-          validFolders.length > 0
-            ? {
-                connect: validFolders.map((id) => ({ id })),
-              }
-            : undefined,
-        recipients:
-          validRecipients?.length > 0
-            ? {
-                create: validRecipients.map((email) => ({
-                  email: email.trim().toLowerCase(),
-                })),
-              }
-            : undefined,
       },
     });
+
+    if (validFiles.length > 0) {
+      await prisma.shareFile.createMany({
+        data: validFiles.map((fileId) => ({ shareId: created.id, fileId })),
+        skipDuplicates: true,
+      });
+    }
+
+    if (validFolders.length > 0) {
+      await prisma.shareFolder.createMany({
+        data: validFolders.map((folderId) => ({ shareId: created.id, folderId })),
+        skipDuplicates: true,
+      });
+    }
+
+    if (validRecipients.length > 0) {
+      await prisma.shareRecipient.createMany({
+        data: validRecipients.map((email) => ({ shareId: created.id, email: email.trim().toLowerCase() })),
+        skipDuplicates: true,
+      });
+    }
+
+    return created;
   }
 
   async findShareById(id: string) {
-    return prisma.share.findUnique({
+    const share = await prisma.share.findUnique({
       where: { id },
-      include: {
-        alias: true,
-        security: true,
-        files: true,
-        folders: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            objectName: true,
-            parentId: true,
-            userId: true,
-            createdAt: true,
-            updatedAt: true,
-            _count: {
-              select: {
-                files: true,
-                children: true,
-              },
-            },
-          },
-        },
-        recipients: true,
-      },
+      include: { alias: true, security: true },
     });
+    if (!share) return null;
+
+    const [shareFiles, shareFolders, recipients] = await Promise.all([
+      prisma.shareFile.findMany({ where: { shareId: id } }),
+      prisma.shareFolder.findMany({ where: { shareId: id } }),
+      prisma.shareRecipient.findMany({ where: { shareId: id } }),
+    ]);
+
+    const [files, folders] = await Promise.all([
+      shareFiles.length
+        ? prisma.file.findMany({ where: { id: { in: shareFiles.map((sf) => sf.fileId) } } })
+        : Promise.resolve([]),
+      shareFolders.length
+        ? prisma.folder.findMany({ where: { id: { in: shareFolders.map((sf) => sf.folderId) } } })
+        : Promise.resolve([]),
+    ]);
+
+    return {
+      ...share,
+      files,
+      folders,
+      recipients,
+    } as any;
   }
 
   async findShareBySecurityId(securityId: string) {
-    return prisma.share.findUnique({
+    const share = await prisma.share.findUnique({
       where: { securityId },
-      include: {
-        security: true,
-        files: true,
-        folders: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            objectName: true,
-            parentId: true,
-            userId: true,
-            createdAt: true,
-            updatedAt: true,
-            _count: {
-              select: {
-                files: true,
-                children: true,
-              },
-            },
-          },
-        },
-      },
+      include: { alias: true, security: true },
     });
+    if (!share) return null;
+
+    const [shareFiles, shareFolders, recipients] = await Promise.all([
+      prisma.shareFile.findMany({ where: { shareId: share.id } }),
+      prisma.shareFolder.findMany({ where: { shareId: share.id } }),
+      prisma.shareRecipient.findMany({ where: { shareId: share.id } }),
+    ]);
+
+    const [files, folders] = await Promise.all([
+      shareFiles.length
+        ? prisma.file.findMany({ where: { id: { in: shareFiles.map((sf) => sf.fileId) } } })
+        : Promise.resolve([]),
+      shareFolders.length
+        ? prisma.folder.findMany({ where: { id: { in: shareFolders.map((sf) => sf.folderId) } } })
+        : Promise.resolve([]),
+    ]);
+
+    return {
+      ...share,
+      files,
+      folders,
+      recipients,
+    } as any;
   }
 
   async updateShare(id: string, data: Partial<Share>): Promise<Share> {
@@ -162,46 +177,32 @@ export class PrismaShareRepository implements IShareRepository {
   }
 
   async addFilesToShare(shareId: string, fileIds: string[]): Promise<void> {
-    await prisma.share.update({
-      where: { id: shareId },
-      data: {
-        files: {
-          connect: fileIds.map((id) => ({ id })),
-        },
-      },
+    if (fileIds.length === 0) return;
+    await prisma.shareFile.createMany({
+      data: fileIds.map((fileId) => ({ shareId, fileId })),
+      skipDuplicates: true,
     });
   }
 
   async addFoldersToShare(shareId: string, folderIds: string[]): Promise<void> {
-    await prisma.share.update({
-      where: { id: shareId },
-      data: {
-        folders: {
-          connect: folderIds.map((id) => ({ id })),
-        },
-      },
+    if (folderIds.length === 0) return;
+    await prisma.shareFolder.createMany({
+      data: folderIds.map((folderId) => ({ shareId, folderId })),
+      skipDuplicates: true,
     });
   }
 
   async removeFilesFromShare(shareId: string, fileIds: string[]): Promise<void> {
-    await prisma.share.update({
-      where: { id: shareId },
-      data: {
-        files: {
-          disconnect: fileIds.map((id) => ({ id })),
-        },
-      },
+    if (fileIds.length === 0) return;
+    await prisma.shareFile.deleteMany({
+      where: { shareId, fileId: { in: fileIds } },
     });
   }
 
   async removeFoldersFromShare(shareId: string, folderIds: string[]): Promise<void> {
-    await prisma.share.update({
-      where: { id: shareId },
-      data: {
-        folders: {
-          disconnect: folderIds.map((id) => ({ id })),
-        },
-      },
+    if (folderIds.length === 0) return;
+    await prisma.shareFolder.deleteMany({
+      where: { shareId, folderId: { in: folderIds } },
     });
   }
 
@@ -226,65 +227,47 @@ export class PrismaShareRepository implements IShareRepository {
   }
 
   async addRecipients(shareId: string, emails: string[]): Promise<void> {
-    await prisma.share.update({
-      where: { id: shareId },
-      data: {
-        recipients: {
-          create: emails.map((email) => ({
-            email,
-          })),
-        },
-      },
+    if (emails.length === 0) return;
+    await prisma.shareRecipient.createMany({
+      data: emails.map((email) => ({ shareId, email })),
+      skipDuplicates: true,
     });
   }
 
   async removeRecipients(shareId: string, emails: string[]): Promise<void> {
-    await prisma.share.update({
-      where: { id: shareId },
-      data: {
-        recipients: {
-          deleteMany: {
-            email: {
-              in: emails,
-            },
-          },
-        },
-      },
+    if (emails.length === 0) return;
+    await prisma.shareRecipient.deleteMany({
+      where: { shareId, email: { in: emails } },
     });
   }
 
   async findSharesByUserId(userId: string) {
-    return prisma.share.findMany({
-      where: {
-        creatorId: userId,
-      },
-      include: {
-        security: true,
-        files: true,
-        folders: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            objectName: true,
-            parentId: true,
-            userId: true,
-            createdAt: true,
-            updatedAt: true,
-            _count: {
-              select: {
-                files: true,
-                children: true,
-              },
-            },
-          },
-        },
-        recipients: true,
-        alias: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
+    const shares = await prisma.share.findMany({
+      where: { creatorId: userId },
+      include: { security: true, alias: true },
+      orderBy: { createdAt: "desc" },
     });
+
+    const results: any[] = [];
+    for (const share of shares) {
+      const [shareFiles, shareFolders, recipients] = await Promise.all([
+        prisma.shareFile.findMany({ where: { shareId: share.id } }),
+        prisma.shareFolder.findMany({ where: { shareId: share.id } }),
+        prisma.shareRecipient.findMany({ where: { shareId: share.id } }),
+      ]);
+
+      const [files, folders] = await Promise.all([
+        shareFiles.length
+          ? prisma.file.findMany({ where: { id: { in: shareFiles.map((sf) => sf.fileId) } } })
+          : Promise.resolve([]),
+        shareFolders.length
+          ? prisma.folder.findMany({ where: { id: { in: shareFolders.map((sf) => sf.folderId) } } })
+          : Promise.resolve([]),
+      ]);
+
+      results.push({ ...share, files, folders, recipients } as any);
+    }
+
+    return results;
   }
 }

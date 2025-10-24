@@ -3,12 +3,12 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id        String   @id @default(cuid())
+  id        String   @id @default(cuid()) @map("_id")
   firstName String
   lastName  String
   username  String   @unique
@@ -27,7 +27,6 @@ model User {
 
   files         File[]
   folders       Folder[]
-  shares        Share[]
   reverseShares ReverseShare[]
 
   loginAttempts LoginAttempt?
@@ -35,12 +34,13 @@ model User {
   passwordResets PasswordReset[]
   authProviders  UserAuthProvider[]
   trustedDevices TrustedDevice[]
+  Share          Share[]
 
   @@map("users")
 }
 
 model File {
-  id          String  @id @default(cuid())
+  id          String  @id @default(cuid()) @map("_id")
   name        String
   description String?
   extension   String
@@ -48,23 +48,20 @@ model File {
   objectName  String
 
   userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
 
   folderId String?
-  folder   Folder? @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  folder   Folder? @relation(fields: [folderId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  shares Share[] @relation("ShareFiles")
-
   @@index([folderId])
-
   @@map("files")
 }
 
 model Share {
-  id          String    @id @default(cuid())
+  id          String    @id @default(cuid()) @map("_id")
   name        String?
   views       Int       @default(0)
   expiration  DateTime?
@@ -73,13 +70,11 @@ model Share {
   updatedAt   DateTime  @updatedAt
 
   creatorId String?
-  creator   User?   @relation(fields: [creatorId], references: [id], onDelete: SetNull)
+  creator   User?   @relation(fields: [creatorId], references: [id])
 
   securityId String        @unique
   security   ShareSecurity @relation(fields: [securityId], references: [id])
 
-  files      File[]           @relation("ShareFiles")
-  folders    Folder[]         @relation("ShareFolders")
   recipients ShareRecipient[]
 
   alias ShareAlias?
@@ -88,7 +83,7 @@ model Share {
 }
 
 model ShareSecurity {
-  id        String   @id @default(cuid())
+  id        String   @id @default(cuid()) @map("_id")
   password  String?
   maxViews  Int?
   createdAt DateTime @default(now())
@@ -100,20 +95,38 @@ model ShareSecurity {
 }
 
 model ShareRecipient {
-  id    String @id @default(cuid())
+  id    String @id @default(cuid()) @map("_id")
   email String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   shareId String
-  share   Share  @relation(fields: [shareId], references: [id], onDelete: Cascade)
+  share   Share  @relation(fields: [shareId], references: [id])
 
   @@map("share_recipients")
 }
 
+model ShareFile {
+  id      String @id @default(cuid()) @map("_id")
+  shareId String
+  fileId  String
+
+  @@unique([shareId, fileId])
+  @@map("share_files")
+}
+
+model ShareFolder {
+  id       String @id @default(cuid()) @map("_id")
+  shareId  String
+  folderId String
+
+  @@unique([shareId, folderId])
+  @@map("share_folders")
+}
+
 model AppConfig {
-  id        String   @id @default(cuid())
+  id        String   @id @default(cuid()) @map("_id")
   key       String   @unique
   value     String
   type      String
@@ -126,9 +139,9 @@ model AppConfig {
 }
 
 model LoginAttempt {
-  id          String   @id @default(cuid())
+  id          String   @id @default(cuid()) @map("_id")
   userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id])
   attempts    Int      @default(1)
   lastAttempt DateTime @default(now())
 
@@ -136,9 +149,9 @@ model LoginAttempt {
 }
 
 model PasswordReset {
-  id        String   @id @default(cuid())
+  id        String   @id @default(cuid()) @map("_id")
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
   token     String   @unique
   expiresAt DateTime
   used      Boolean  @default(false)
@@ -149,10 +162,10 @@ model PasswordReset {
 }
 
 model ShareAlias {
-  id        String   @id @default(cuid())
+  id        String   @id @default(cuid()) @map("_id")
   alias     String   @unique
   shareId   String   @unique
-  share     Share    @relation(fields: [shareId], references: [id], onDelete: Cascade)
+  share     Share    @relation(fields: [shareId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -160,7 +173,7 @@ model ShareAlias {
 }
 
 model AuthProvider {
-  id          String  @id @default(cuid())
+  id          String  @id @default(cuid()) @map("_id")
   name        String  @unique
   displayName String
   type        String
@@ -193,12 +206,12 @@ model AuthProvider {
 }
 
 model UserAuthProvider {
-  id     String @id @default(cuid())
+  id     String @id @default(cuid()) @map("_id")
   userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
 
   providerId   String
-  authProvider AuthProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  authProvider AuthProvider @relation(fields: [providerId], references: [id])
 
   provider String?
 
@@ -213,7 +226,7 @@ model UserAuthProvider {
 }
 
 model ReverseShare {
-  id                 String           @id @default(cuid())
+  id                 String           @id @default(cuid()) @map("_id")
   name               String?
   description        String?
   expiration         DateTime?
@@ -229,7 +242,7 @@ model ReverseShare {
   updatedAt          DateTime         @updatedAt
 
   creatorId String
-  creator   User   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creator   User   @relation(fields: [creatorId], references: [id])
 
   files ReverseShareFile[]
   alias ReverseShareAlias?
@@ -238,7 +251,7 @@ model ReverseShare {
 }
 
 model ReverseShareFile {
-  id            String   @id @default(cuid())
+  id            String   @id @default(cuid()) @map("_id")
   name          String
   description   String?
   extension     String
@@ -250,16 +263,16 @@ model ReverseShareFile {
   updatedAt     DateTime @updatedAt
 
   reverseShareId String
-  reverseShare   ReverseShare @relation(fields: [reverseShareId], references: [id], onDelete: Cascade)
+  reverseShare   ReverseShare @relation(fields: [reverseShareId], references: [id])
 
   @@map("reverse_share_files")
 }
 
 model ReverseShareAlias {
-  id             String       @id @default(cuid())
+  id             String       @id @default(cuid()) @map("_id")
   alias          String       @unique
   reverseShareId String       @unique
-  reverseShare   ReverseShare @relation(fields: [reverseShareId], references: [id], onDelete: Cascade)
+  reverseShare   ReverseShare @relation(fields: [reverseShareId], references: [id])
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
@@ -278,40 +291,38 @@ enum PageLayout {
 }
 
 model TrustedDevice {
-  id           String   @id @default(cuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  deviceHash   String   @unique
-  deviceName   String?
-  userAgent    String?
-  ipAddress    String?
-  lastUsedAt   DateTime @default(now())
-  expiresAt    DateTime
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id         String   @id @default(cuid()) @map("_id")
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  deviceHash String   @unique
+  deviceName String?
+  userAgent  String?
+  ipAddress  String?
+  lastUsedAt DateTime @default(now())
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@map("trusted_devices")
 }
 
 model Folder {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid()) @map("_id")
   name        String
   description String?
   objectName  String
 
-  parentId    String?
-  parent      Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
-  children    Folder[] @relation("FolderHierarchy")
+  parentId String?
+  parent   Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children Folder[] @relation("FolderHierarchy")
 
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
-  files       File[]
+  files File[]
 
-  shares      Share[]  @relation("ShareFolders")
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([parentId])
