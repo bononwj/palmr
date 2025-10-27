@@ -64,21 +64,18 @@ export class PrismaShareRepository implements IShareRepository {
     if (validFiles.length > 0) {
       await prisma.shareFile.createMany({
         data: validFiles.map((fileId) => ({ shareId: created.id, fileId })),
-        skipDuplicates: true,
       });
     }
 
     if (validFolders.length > 0) {
       await prisma.shareFolder.createMany({
         data: validFolders.map((folderId) => ({ shareId: created.id, folderId })),
-        skipDuplicates: true,
       });
     }
 
     if (validRecipients.length > 0) {
       await prisma.shareRecipient.createMany({
         data: validRecipients.map((email) => ({ shareId: created.id, email: email.trim().toLowerCase() })),
-        skipDuplicates: true,
       });
     }
 
@@ -180,7 +177,6 @@ export class PrismaShareRepository implements IShareRepository {
     if (fileIds.length === 0) return;
     await prisma.shareFile.createMany({
       data: fileIds.map((fileId) => ({ shareId, fileId })),
-      skipDuplicates: true,
     });
   }
 
@@ -188,7 +184,6 @@ export class PrismaShareRepository implements IShareRepository {
     if (folderIds.length === 0) return;
     await prisma.shareFolder.createMany({
       data: folderIds.map((folderId) => ({ shareId, folderId })),
-      skipDuplicates: true,
     });
   }
 
@@ -230,7 +225,6 @@ export class PrismaShareRepository implements IShareRepository {
     if (emails.length === 0) return;
     await prisma.shareRecipient.createMany({
       data: emails.map((email) => ({ shareId, email })),
-      skipDuplicates: true,
     });
   }
 

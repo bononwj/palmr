@@ -200,28 +200,36 @@ export class FileController {
 
       console.log("Requested file with password " + password);
 
-      const shares = await prisma.share.findMany({
+      // Find shares that contain this file through ShareFile
+      const shareFiles = await prisma.shareFile.findMany({
         where: {
-          files: {
-            some: {
-              id: fileRecord.id,
-            },
-          },
-        },
-        include: {
-          security: true,
+          fileId: fileRecord.id,
         },
       });
 
-      for (const share of shares) {
-        if (!share.security.password) {
-          hasAccess = true;
-          break;
-        } else if (password) {
-          const isPasswordValid = await bcrypt.compare(password, share.security.password);
-          if (isPasswordValid) {
+      if (shareFiles.length > 0) {
+        const shareIds = shareFiles.map((sf) => sf.shareId);
+        const shares = await prisma.share.findMany({
+          where: {
+            id: {
+              in: shareIds,
+            },
+          },
+          include: {
+            security: true,
+          },
+        });
+
+        for (const share of shares) {
+          if (!share.security.password) {
             hasAccess = true;
             break;
+          } else if (password) {
+            const isPasswordValid = await bcrypt.compare(password, share.security.password);
+            if (isPasswordValid) {
+              hasAccess = true;
+              break;
+            }
           }
         }
       }

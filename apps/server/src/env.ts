@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+// 如果环境变量中没有设置 DATABASE_URL，则使用默认值
+const DEFAULT_DATABASE_URL = process.env.DATABASE_URL || "mongodb://localhost:27017/palmr";
+
 const envSchema = z.object({
   ENABLE_S3: z.union([z.literal("true"), z.literal("false")]).default("false"),
   ENCRYPTION_KEY: z.string().optional(),
@@ -15,7 +18,7 @@ const envSchema = z.object({
   S3_REJECT_UNAUTHORIZED: z.union([z.literal("true"), z.literal("false")]).default("true"),
   PRESIGNED_URL_EXPIRATION: z.string().optional().default("3600"),
   SECURE_SITE: z.union([z.literal("true"), z.literal("false")]).default("false"),
-  DATABASE_URL: z.string().optional().default("mongodb://localhost:27017/palmr"),
+  DATABASE_URL: z.string().default(DEFAULT_DATABASE_URL),
   DOWNLOAD_MAX_CONCURRENT: z
     .string()
     .optional()
