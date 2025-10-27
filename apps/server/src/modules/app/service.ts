@@ -89,9 +89,18 @@ export class AppService {
       throw new Error("Configuration not found");
     }
 
-    return prisma.appConfig.update({
+    await prisma.appConfig.update({
       where: { key },
       data: { value },
+      select: {
+        key: true,
+        value: true,
+        updatedAt: true,
+      },
+    });
+
+    return await prisma.appConfig.findUnique({
+      where: { key },
     });
   }
 
