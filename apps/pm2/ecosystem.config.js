@@ -29,8 +29,9 @@ module.exports = {
         PORT: 3333,
         HOST: "0.0.0.0", // 避免 IPv6 报错
         HOSTNAME: "0.0.0.0",
-        DATABASE_URL: `mongodb://${process.env.MONGODB_USER}:${process.env.MONGODB_PASSWORD}@localhost:27017/palmr`,
+        DATABASE_URL: process.env.DATABASE_URL,
       },
+      pre_setup: "pnpm db:seed", // 运行数据库种子命令
       instances: 1, // 或 'max' 开启多核模式
       exec_mode: "cluster", // 使用 cluster 模式
       watch: false, // 不监听变更（生产环境禁用）
