@@ -94,12 +94,12 @@ export async function buildApp() {
     routePrefix: "/swagger",
   });
 
-  app.register(require("@scalar/fastify-api-reference"), {
-    routePrefix: "/docs",
-    configuration: {
-      theme: "deepSpace",
-    },
-  });
+  // app.register(fastifyScalarApiReference, {
+  //   routePrefix: "/docs",
+  //   configuration: {
+  //     theme: "deepSpace",
+  //   },
+  // });
 
   return app;
 }
