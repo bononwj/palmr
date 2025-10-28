@@ -393,7 +393,8 @@
       "edit": "编辑",
       "share": "分享",
       "download": "下载",
-      "delete": "删除"
+      "delete": "删除",
+      "move": "移动"
     },
     "bulkActions": {
       "selected": "{count, plural, =1 {已选择1个文件} other {已选择#个文件}}",

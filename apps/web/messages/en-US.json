@@ -393,7 +393,8 @@
       "edit": "Edit",
       "share": "Share",
       "download": "Download",
-      "delete": "Delete"
+      "delete": "Delete",
+      "move": "Move"
     },
     "bulkActions": {
       "selected": "{count, plural, =1 {1 file selected} other {# files selected}}",

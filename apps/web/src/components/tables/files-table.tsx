@@ -682,7 +682,7 @@ export function FilesTable({
                           {onMoveFolder && (
                             <DropdownMenuItem className="cursor-pointer py-2" onClick={() => onMoveFolder(folder)}>
                               <IconArrowsMove className="h-4 w-4" />
-                              Move
+                              {t("filesTable.actions.move")}
                             </DropdownMenuItem>
                           )}
                           {onDownloadFolder && (
