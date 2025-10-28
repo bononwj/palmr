@@ -1592,7 +1592,7 @@
       "files": "文件",
       "recipients": "收件人",
       "actions": "操作",
-      "description": "DESCRIÇÃO"
+      "description": "详情"
     },
     "status": {
       "neverExpires": "永不过期",

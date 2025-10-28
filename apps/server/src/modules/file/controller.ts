@@ -454,9 +454,8 @@ export class FileController {
 
   private async getAllUserFilesRecursively(userId: string): Promise<any[]> {
     const rootFiles = await prisma.file.findMany({
-      where: { userId, folderId: null },
+      where: { userId },
     });
-
     const rootFolders = await prisma.folder.findMany({
       where: { userId, parentId: null },
       select: { id: true },
