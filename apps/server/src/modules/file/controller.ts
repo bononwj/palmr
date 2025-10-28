@@ -93,6 +93,18 @@ export class FileController {
         }
       }
 
+      const files = await prisma.file.findMany({
+        where: {
+          name: input.name,
+          userId,
+        },
+      });
+
+      for (const file of files) {
+        await this.fileService.deleteObject(file.objectName);
+        await prisma.file.delete({ where: { id: file.id } });
+      }
+
       const fileRecord = await prisma.file.create({
         data: {
           name: input.name,
