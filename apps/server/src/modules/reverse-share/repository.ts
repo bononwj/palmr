@@ -120,20 +120,25 @@ export class ReverseShareRepository {
   }
 
   async delete(id: string) {
-    return prisma.reverseShare.delete({
-      where: { id },
-      include: {
-        creator: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
+    return prisma.$transaction(async (tx) => {
+      await tx.reverseShareFile.deleteMany({ where: { reverseShareId: id } });
+      await tx.reverseShareAlias.deleteMany({ where: { reverseShareId: id } });
+
+      return tx.reverseShare.delete({
+        where: { id },
+        include: {
+          creator: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
           },
+          files: true,
+          alias: true,
         },
-        files: true,
-        alias: true,
-      },
+      });
     });
   }
 
