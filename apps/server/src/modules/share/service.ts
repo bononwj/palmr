@@ -197,6 +197,7 @@ export class ShareService {
       await tx.shareFile.deleteMany({ where: { shareId: id } });
       await tx.shareFolder.deleteMany({ where: { shareId: id } });
       await tx.shareRecipient.deleteMany({ where: { shareId: id } });
+      await tx.shareAlias.deleteMany({ where: { shareId: id } });
 
       const deletedShare = await tx.share.delete({
         where: { id },
