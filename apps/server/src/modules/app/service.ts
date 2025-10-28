@@ -38,6 +38,13 @@ export class AppService {
       orderBy: {
         group: "asc",
       },
+      select: {
+        key: true,
+        value: true,
+        type: true,
+        group: true,
+        updatedAt: true,
+      },
     });
   }
 
@@ -61,6 +68,13 @@ export class AppService {
       },
       orderBy: {
         group: "asc",
+      },
+      select: {
+        key: true,
+        value: true,
+        type: true,
+        group: true,
+        updatedAt: true,
       },
     });
   }
@@ -89,18 +103,17 @@ export class AppService {
       throw new Error("Configuration not found");
     }
 
-    await prisma.appConfig.update({
-      where: { key },
+    // Update by id (MongoDB best practice with Prisma)
+    return await prisma.appConfig.update({
+      where: { id: config.id },
       data: { value },
       select: {
         key: true,
         value: true,
+        type: true,
+        group: true,
         updatedAt: true,
       },
-    });
-
-    return await prisma.appConfig.findUnique({
-      where: { key },
     });
   }
 
@@ -129,11 +142,22 @@ export class AppService {
       throw new Error(`Configurations not found: ${missingKeys.join(", ")}`);
     }
 
+    // Create key to id mapping
+    const keyToId = new Map(existingConfigs.map((c) => [c.key, c.id]));
+
+    // Update by id (MongoDB best practice with Prisma)
     return prisma.$transaction(
       updates.map((update) =>
         prisma.appConfig.update({
-          where: { key: update.key },
+          where: { id: keyToId.get(update.key)! },
           data: { value: update.value },
+          select: {
+            key: true,
+            value: true,
+            type: true,
+            group: true,
+            updatedAt: true,
+          },
         })
       )
     );

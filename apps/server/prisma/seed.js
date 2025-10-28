@@ -169,42 +169,28 @@ async function main() {
   let skippedCount = 0;
 
   for (const config of defaultConfigs) {
-    const existingConfig = await prisma.appConfig.findUnique({
-      where: { key: config.key },
-    });
+    try {
+      // Check if exists
+      const existing = await prisma.appConfig.findUnique({
+        where: { key: config.key },
+      });
 
-    if (existingConfig) {
-      console.log(`⏭️  Configuration '${config.key}' already exists, skipping...`);
-      skippedCount++;
-      continue;
+      if (existing) {
+        console.log(`⏭️  Configuration '${config.key}' already exists, skipping...`);
+        skippedCount++;
+        continue;
+      }
+
+      // Create new with Prisma-generated _id
+      await prisma.appConfig.create({
+        data: config,
+      });
+
+      console.log(`✅ Created configuration: ${config.key}`);
+      createdCount++;
+    } catch (error) {
+      console.error(`❌ Error processing ${config.key}:`, error.message);
     }
-
-    await prisma.$runCommandRaw({
-      update: "app_configs",
-      updates: [
-        {
-          q: { key: config.key },
-          u: { $setOnInsert: { ...config, createdAt: new Date(), updatedAt: new Date() } },
-          upsert: true,
-        },
-      ],
-    });
-
-    console.log(`✅ Created configuration: ${config.key}`);
-    createdCount++;
-  }
-
-  // Normalize Date fields to BSON Date (fix records saved as strings)
-  try {
-    await prisma.$runCommandRaw({
-      update: "app_configs",
-      updates: [
-        { q: { createdAt: { $type: "string" } }, u: [{ $set: { createdAt: { $toDate: "$createdAt" } } }], multi: true },
-        { q: { updatedAt: { $type: "string" } }, u: [{ $set: { updatedAt: { $toDate: "$updatedAt" } } }], multi: true },
-      ],
-    });
-  } catch (e) {
-    console.warn("⚠️  Skipped app_configs date normalization:", e?.message || e);
   }
 
   console.log("\n📊 Seed Summary:");
