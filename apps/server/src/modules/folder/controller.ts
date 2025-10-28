@@ -359,11 +359,10 @@ export class FolderController {
         return reply.status(403).send({ error: "Access denied." });
       }
 
-      await this.folderService.deleteObject(folderRecord.objectName);
+      // Perform recursive deletion: files, shares, child folders, storage objects
+      const result = await this.folderService.deleteFolderRecursively(id, userId);
 
-      await prisma.folder.delete({ where: { id } });
-
-      return reply.send({ message: "Folder deleted successfully." });
+      return reply.send({ message: "Folder deleted successfully.", ...result });
     } catch (error) {
       console.error("Error in deleteFolder:", error);
       return reply.status(500).send({ error: "Internal server error." });

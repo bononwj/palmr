@@ -90,4 +90,89 @@ export class FolderService {
 
     return totalSize;
   }
+
+  async deleteFolderRecursively(
+    folderId: string,
+    userId: string
+  ): Promise<{ deletedFiles: number; deletedFolders: number }> {
+    // Ensure the folder exists and belongs to the user
+    const targetFolder = await prisma.folder.findFirst({ where: { id: folderId, userId } });
+    if (!targetFolder) {
+      throw new Error("Folder not found or access denied");
+    }
+
+    // 1) Collect all descendant folder ids, including the target
+    const folderIdsToDelete: string[] = [];
+    const stack: string[] = [folderId];
+
+    while (stack.length > 0) {
+      const currentId = stack.pop() as string;
+      folderIdsToDelete.push(currentId);
+
+      const children = await prisma.folder.findMany({
+        where: { parentId: currentId, userId },
+        select: { id: true },
+      });
+      for (const child of children) {
+        stack.push(child.id);
+      }
+    }
+
+    // 2) Load files in these folders
+    const filesToDelete = await prisma.file.findMany({
+      where: { userId, folderId: { in: folderIdsToDelete } },
+      select: { id: true, objectName: true },
+    });
+
+    // 3) Load folder object names for storage cleanup
+    const foldersInfo = await prisma.folder.findMany({
+      where: { id: { in: folderIdsToDelete } },
+      select: { id: true, objectName: true },
+    });
+
+    // 4) Delete storage objects for files (best-effort)
+    await Promise.all(
+      filesToDelete.map(async (f) => {
+        try {
+          await this.storageProvider.deleteObject(f.objectName);
+        } catch (err) {
+          console.warn("Failed to delete file object:", f.objectName, err);
+        }
+      })
+    );
+
+    // 5) Delete storage objects for folder markers (best-effort)
+    await Promise.all(
+      foldersInfo.map(async (fld) => {
+        try {
+          await this.storageProvider.deleteObject(fld.objectName);
+        } catch (err) {
+          // Some backends may not have a concrete object for folders – ignore
+        }
+      })
+    );
+
+    // 6) Delete DB records within a single interactive transaction
+    await prisma.$transaction(async (tx) => {
+      const fileIds = filesToDelete.map((f) => f.id);
+
+      if (fileIds.length > 0) {
+        await tx.shareFile.deleteMany({ where: { fileId: { in: fileIds } } });
+      }
+
+      await tx.shareFolder.deleteMany({ where: { folderId: { in: folderIdsToDelete } } });
+
+      if (fileIds.length > 0) {
+        await tx.file.deleteMany({ where: { id: { in: fileIds } } });
+      }
+
+      // Delete child folders before parents
+      const reversedFolderIds = [...folderIdsToDelete].reverse();
+      for (const id of reversedFolderIds) {
+        await tx.folder.delete({ where: { id } });
+      }
+    });
+
+    return { deletedFiles: filesToDelete.length, deletedFolders: folderIdsToDelete.length };
+  }
 }
