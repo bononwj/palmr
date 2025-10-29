@@ -1,0 +1,55 @@
+module.exports = {
+  apps: [
+    {
+      name: "next-app",
+      script: "apps/web/.next/standalone/server.js",
+      cwd: "/data/wwwroot/download.yipai360.com",
+      env: {
+        NODE_ENV: "production",
+        PORT: 3000,
+        HOST: "0.0.0.0",
+        HOSTNAME: "0.0.0.0",
+        API_BASE_URL: "http://localhost:3333", // 本地调用
+      },
+      instances: 1,
+      exec_mode: "cluster",
+      watch: false,
+      max_memory_restart: "400M",
+      error_file: "/var/log/next-app/error.log",
+      out_file: "/var/log/next-app/out.log",
+      log_date_format: "YYYY-MM-DD HH:mm:ss",
+      autorestart: true,
+      time: true,
+    },
+    {
+      name: "server-app",
+      script: "apps/server/dist/server.js",
+      cwd: "/data/wwwroot/download.yipai360.com",
+      env: {
+        NODE_ENV: "production",
+        PORT: 3333,
+        HOST: "0.0.0.0",
+        HOSTNAME: "0.0.0.0",
+        DATABASE_URL: process.env.DATABASE_URL,
+        // 文件同步配置 - 成都服务器启用
+        SYNC_ENABLED: "true",
+        SYNC_REMOTE_HOST: "139.224.82.205", // 填写实际IP
+        SYNC_REMOTE_USER: "root",
+        SYNC_REMOTE_PATH: "/data/wwwroot/download.yipai360.com/uploads",
+        SYNC_SSH_KEY_PATH: "/root/.ssh/palmr_sync_rsa",
+        SYNC_RETRY_TIMES: "3",
+        SYNC_RETRY_DELAY: "5000",
+        SYNC_MAX_CONCURRENT: "3",
+      },
+      instances: 1,
+      exec_mode: "cluster",
+      watch: false,
+      max_memory_restart: "400M",
+      error_file: "/var/log/server-app/error.log",
+      out_file: "/var/log/server-app/out.log",
+      log_date_format: "YYYY-MM-DD HH:mm:ss",
+      autorestart: true,
+      time: true,
+    },
+  ],
+};

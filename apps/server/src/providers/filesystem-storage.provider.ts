@@ -8,6 +8,7 @@ import { pipeline } from "stream/promises";
 import { directoriesConfig, getTempFilePath } from "../config/directories.config";
 import { env } from "../env";
 import { StorageProvider } from "../types/storage";
+import { FileSyncService } from "../utils/file-sync.service";
 
 export class FilesystemStorageProvider implements StorageProvider {
   private static instance: FilesystemStorageProvider;
@@ -205,6 +206,11 @@ export class FilesystemStorageProvider implements StorageProvider {
     const filePath = this.getFilePath(objectName);
     try {
       await fs.unlink(filePath);
+      // Trigger file deletion sync asynchronously
+      const syncService = FileSyncService.getInstance();
+      syncService.syncDelete(objectName).catch((err) => {
+        console.error("[SYNC] Failed to sync file deletion:", err);
+      });
     } catch (error: any) {
       if (error.code !== "ENOENT") {
         throw error;

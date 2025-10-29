@@ -37,6 +37,27 @@ const envSchema = z.object({
     .optional()
     .transform((val) => (val ? parseFloat(val) : undefined)),
   CUSTOM_PATH: z.string().optional(),
+  // File sync configuration
+  SYNC_ENABLED: z.union([z.literal("true"), z.literal("false")]).default("false"),
+  SYNC_REMOTE_HOST: z.string().optional(),
+  SYNC_REMOTE_USER: z.string().optional(),
+  SYNC_REMOTE_PATH: z.string().optional(),
+  SYNC_SSH_KEY_PATH: z.string().optional(),
+  SYNC_RETRY_TIMES: z
+    .string()
+    .optional()
+    .default("3")
+    .transform((val) => parseInt(val, 10)),
+  SYNC_RETRY_DELAY: z
+    .string()
+    .optional()
+    .default("5000")
+    .transform((val) => parseInt(val, 10)),
+  SYNC_MAX_CONCURRENT: z
+    .string()
+    .optional()
+    .default("3")
+    .transform((val) => parseInt(val, 10)),
 });
 
 export const env = envSchema.parse(process.env);

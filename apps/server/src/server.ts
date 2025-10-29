@@ -19,6 +19,7 @@ import { healthRoutes } from "./modules/health/routes";
 import { reverseShareRoutes } from "./modules/reverse-share/routes";
 import { shareRoutes } from "./modules/share/routes";
 import { storageRoutes } from "./modules/storage/routes";
+import { syncRoutes } from "./modules/sync/routes";
 import { twoFactorRoutes } from "./modules/two-factor/routes";
 import { userRoutes } from "./modules/user/routes";
 import { IS_RUNNING_IN_CONTAINER } from "./utils/container-detection";
@@ -81,6 +82,7 @@ async function startServer() {
   app.register(shareRoutes);
   app.register(reverseShareRoutes);
   app.register(storageRoutes);
+  app.register(syncRoutes);
   app.register(appRoutes);
   app.register(healthRoutes);
 

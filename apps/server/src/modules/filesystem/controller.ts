@@ -5,12 +5,14 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { FilesystemStorageProvider } from "../../providers/filesystem-storage.provider";
 import { DownloadCancelResponse, QueueClearResponse, QueueStatusResponse } from "../../types/download-queue";
 import { DownloadMemoryManager } from "../../utils/download-memory-manager";
+import { FileSyncService } from "../../utils/file-sync.service";
 import { getContentType } from "../../utils/mime-types";
 import { ChunkManager, ChunkMetadata } from "./chunk-manager";
 
 export class FilesystemController {
   private chunkManager = ChunkManager.getInstance();
   private memoryManager = DownloadMemoryManager.getInstance();
+  private syncService = FileSyncService.getInstance();
 
   private encodeFilenameForHeader(filename: string): string {
     if (!filename || filename.trim() === "") {
@@ -73,6 +75,12 @@ export class FilesystemController {
 
           if (result.isComplete) {
             provider.consumeUploadToken(token);
+            // Trigger file sync asynchronously
+            if (result.finalPath) {
+              this.syncService.syncFile(result.finalPath).catch((err) => {
+                console.error("[SYNC] Failed to sync chunked upload:", err);
+              });
+            }
             reply.status(200).send({
               message: "File uploaded successfully",
               objectName: result.finalPath,
@@ -93,6 +101,10 @@ export class FilesystemController {
       } else {
         await this.uploadFileStream(request, provider, tokenData.objectName);
         provider.consumeUploadToken(token);
+        // Trigger file sync asynchronously
+        this.syncService.syncFile(tokenData.objectName).catch((err) => {
+          console.error("[SYNC] Failed to sync file upload:", err);
+        });
         reply.status(200).send({ message: "File uploaded successfully" });
       }
     } catch (error) {

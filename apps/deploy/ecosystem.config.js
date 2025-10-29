@@ -30,6 +30,15 @@ module.exports = {
         HOST: "0.0.0.0", // 避免 IPv6 报错
         HOSTNAME: "0.0.0.0",
         DATABASE_URL: process.env.DATABASE_URL,
+        // 文件同步配置（仅在服务器 A 启用）
+        SYNC_ENABLED: "false", // 服务器 A 设置为 "true"，服务器 B 设置为 "false"
+        SYNC_REMOTE_HOST: "", // 服务器 B 的 IP 地址
+        SYNC_REMOTE_USER: "", // SSH 用户名
+        SYNC_REMOTE_PATH: "/data/wwwroot/download.yipai360.com/uploads",
+        SYNC_SSH_KEY_PATH: "/root/.ssh/palmr_sync_rsa", // SSH 私钥路径
+        SYNC_RETRY_TIMES: "3",
+        SYNC_RETRY_DELAY: "5000",
+        SYNC_MAX_CONCURRENT: "3",
       },
       pre_setup: "pnpm db:seed", // 运行数据库种子命令
       instances: 1, // 或 'max' 开启多核模式

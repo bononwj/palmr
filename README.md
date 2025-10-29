@@ -28,6 +28,7 @@
 - **Folder organization** – Create folders to organize and share files.
 - **Simple deployment** – SQLite database and filesystem storage for easy setup.
 - **Scalable storage** – Optional S3-compatible object storage for enterprise needs.
+- **Multi-server sync** – Automatic file synchronization between multiple servers for high availability.
 
 ## 🚀 Technologies Used
 
@@ -37,15 +38,15 @@
   <img src="https://res.cloudinary.com/technical-intelligence/image/upload/v1745548231/Palmr./Captura_de_Tela_2025-04-24_a%CC%80s_23.24.26_kr4hsl.png" style="width: 100%; border-radius: 15px;" />
 </div>
 
-
 ### **Backend & API**
+
 - **Fastify (Node.js)** – High-performance API framework with built-in schema validation.
 - **SQLite** – Lightweight, reliable database with zero-configuration setup.
 - **Filesystem Storage** – Direct file storage with optional S3-compatible object storage.
 
 ### **Frontend**
-- **NextJS 15 + TypeScript + Shadcn/ui** – Modern and fast web interface.
 
+- **NextJS 15 + TypeScript + Shadcn/ui** – Modern and fast web interface.
 
 ## 🛠️ How It Works
 
@@ -125,11 +126,10 @@
   </tr>
 </table>
 
-
 ## 👨‍💻 Core Maintainers
 
-| [**Daniel Luiz Alves**](https://github.com/danielalves96) |
-|------------------|
+| [**Daniel Luiz Alves**](https://github.com/danielalves96)                                |
+| ---------------------------------------------------------------------------------------- |
 | <img src="https://github.com/danielalves96.png" width="150px" alt="Daniel Luiz Alves" /> |
 
 </br>
@@ -148,7 +148,21 @@
    </picture>
   </a>
 
+## 📚 Additional Documentation
+
+### File Sync for Multi-Server Deployment
+
+If you're deploying Palmr on multiple servers behind a load balancer, check out our file synchronization feature:
+
+- **[File Sync Guide](apps/deploy/FILE_SYNC_GUIDE.md)** - Complete setup and troubleshooting guide
+
+**Features:**
+
+- ✅ Automatic real-time file synchronization between servers
+- ✅ Automatic retry with exponential backoff
+- ✅ Monitoring API for sync status and history
+- ✅ Async processing (non-blocking user requests)
+
 ## 🛠️ Contributing
 
 For contribution guidelines, please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file.
-
