@@ -222,10 +222,10 @@ pm2 restart server-app
 pm2 logs server-app | grep "File sync service initialized"
 
 # 查看同步状态 API
-curl http://localhost:3333/api/sync/status
+curl http://localhost:3333/sync/status
 
 # 查看同步历史
-curl http://localhost:3333/api/sync/history
+curl http://localhost:3333/sync/history
 ```
 
 ### 测试文件同步
@@ -274,7 +274,7 @@ sudo chmod -R 755 /data/wwwroot/download.yipai360.com/uploads
 pm2 logs server-app --err
 
 # 查看同步历史（包含失败信息）
-curl http://localhost:3333/api/sync/history | jq '.history[] | select(.status=="failed")'
+curl http://localhost:3333/sync/history | jq '.history[] | select(.status=="failed")'
 ```
 
 ## 同步 API
@@ -282,19 +282,19 @@ curl http://localhost:3333/api/sync/history | jq '.history[] | select(.status=="
 ### 查看状态
 
 ```bash
-GET /api/sync/status
+GET /sync/status
 ```
 
 ### 查看历史
 
 ```bash
-GET /api/sync/history?limit=50
+GET /sync/history?limit=50
 ```
 
 ### 重试失败任务
 
 ```bash
-POST /api/sync/retry/{taskId}
+POST /sync/retry/{taskId}
 ```
 
 ## 安全性说明
@@ -365,7 +365,7 @@ curl https://download.yipai360.com/api-internal/api/health
 - [ ] 4. 验证同步服务启动
   ```bash
   pm2 logs server-app | grep "File sync service initialized"
-  curl http://localhost:3333/api/sync/status
+  curl http://localhost:3333/sync/status
   ```
 
 ### 上海服务器（从服务器）
