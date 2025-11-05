@@ -1,0 +1,23 @@
+services:
+  palmr-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: palmr-web
+    volumes:
+      # 挂载整个项目目录（包含已构建的 .next 目录）
+      - /data/wwwroot/download.yipai360.com:/app
+      # 如果需要日志目录，也可以挂载
+      - /var/log/next-app:/var/log/next-app
+    ports:
+      - "3000:3000" # 根据实际需要调整端口映射
+    environment:
+      - NODE_ENV=production
+      # 如果需要，可以添加其他环境变量
+      # - API_BASE_URL=https://download.yipai360.com/api-internal
+    working_dir: /app
+    command: >
+      sh -c "
+        pm2-runtime /app/apps/web/ecosystem.config.js
+      "
+    restart: unless-stopped
