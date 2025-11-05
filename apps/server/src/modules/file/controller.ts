@@ -40,10 +40,9 @@ export class FileController {
         return reply.status(401).send({ error: "Unauthorized: a valid token is required to access this resource." });
       }
 
-      // Build objectName based on folder structure using readable username as root
-      // This makes the on-disk path human-friendly, e.g. username/Projects/Web/index.ts
-      const user = await prisma.user.findUnique({ where: { id: userId }, select: { username: true } });
-      const userRoot = user?.username || userId; // fallback to userId just in case
+      // Build objectName based on folder structure using app name as root
+      // This makes the on-disk path human-friendly, e.g. appName/Projects/Web/index.ts
+      const appName = await this.configService.getValue("appName");
 
       let objectName: string;
 
@@ -53,11 +52,11 @@ export class FileController {
         const folderService = new FolderService();
         const folderPath = await folderService.getFolderPath(folderId, userId);
 
-        // Construct objectName: username/folderPath/filename.extension
-        objectName = `${userRoot}/${folderPath}/${filename}.${extension}`;
+        // Construct objectName: appName/folderPath/filename.extension
+        objectName = `${appName}/${folderPath}/${filename}.${extension}`;
       } else {
-        // Root level file: username/filename.extension
-        objectName = `${userRoot}/${filename}.${extension}`;
+        // Root level file: appName/filename.extension
+        objectName = `${appName}/${filename}.${extension}`;
       }
 
       const expires = parseInt(env.PRESIGNED_URL_EXPIRATION);
