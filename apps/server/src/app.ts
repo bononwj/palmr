@@ -94,7 +94,7 @@ export async function buildApp() {
     routePrefix: "/swagger",
   });
 
-  // app.register(fastifyScalarApiReference, {
+  // app.register(require("@scalar/fastify-api-reference"), {
   //   routePrefix: "/docs",
   //   configuration: {
   //     theme: "deepSpace",

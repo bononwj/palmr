@@ -42,6 +42,7 @@ export class AuthService {
       where: { userId: user.id },
     });
 
+    let attemptStillExists = false;
     if (loginAttempt) {
       if (loginAttempt.attempts >= maxAttempts && Date.now() - loginAttempt.lastAttempt.getTime() < blockDuration) {
         const remainingTime = Math.ceil(
@@ -54,6 +55,9 @@ export class AuthService {
         await prisma.loginAttempt.delete({
           where: { userId: user.id },
         });
+        attemptStillExists = false;
+      } else {
+        attemptStillExists = true;
       }
     }
 
@@ -82,8 +86,9 @@ export class AuthService {
       throw new Error("Invalid credentials");
     }
 
-    if (loginAttempt) {
-      await prisma.loginAttempt.delete({
+    // Clean up login attempts on successful login
+    if (attemptStillExists) {
+      await prisma.loginAttempt.deleteMany({
         where: { userId: user.id },
       });
     }
