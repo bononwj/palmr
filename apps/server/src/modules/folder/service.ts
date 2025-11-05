@@ -91,6 +91,31 @@ export class FolderService {
     return totalSize;
   }
 
+  /**
+   * Get the full path of a folder from root to the specified folder
+   * Returns path like: "folder1/folder2/folder3"
+   */
+  async getFolderPath(folderId: string, userId: string): Promise<string> {
+    const pathParts: string[] = [];
+    let currentFolderId: string | null = folderId;
+
+    while (currentFolderId) {
+      const folder: any = await prisma.folder.findFirst({
+        where: { id: currentFolderId, userId },
+        select: { name: true, parentId: true },
+      });
+
+      if (!folder) {
+        throw new Error(`Folder not found or access denied: ${currentFolderId}`);
+      }
+
+      pathParts.unshift(folder.name);
+      currentFolderId = folder.parentId;
+    }
+
+    return pathParts.join("/");
+  }
+
   async deleteFolderRecursively(
     folderId: string,
     userId: string

@@ -80,6 +80,10 @@
     "folderNameRequired": "文件夹名称为必填项",
     "folderNameTooLong": "文件夹名称过长（最多255个字符）",
     "folderNamePlaceholder": "请输入文件夹名称",
+    "folderNameInvalidChars": "文件夹名称包含非法字符：< > : \" / \\ | ? *",
+    "folderNameNoSpaces": "文件夹名称不能以空格开头或结尾",
+    "folderNameNoPeriod": "文件夹名称不能以句点结尾",
+    "folderNameReserved": "此文件夹名称为系统保留名称",
     "description": "描述",
     "descriptionPlaceholder": "请输入文件夹描述（可选）"
   },

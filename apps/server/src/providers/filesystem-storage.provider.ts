@@ -65,7 +65,10 @@ export class FilesystemStorageProvider implements StorageProvider {
   }
 
   public getFilePath(objectName: string): string {
-    const sanitizedName = objectName.replace(/[^a-zA-Z0-9\-_./]/g, "_");
+    // Prevent path traversal and keep readable unicode characters (e.g., Chinese)
+    // Disallow reserved characters and control chars, preserve slashes for subdirectories
+    const withoutTraversal = objectName.replace(/\.{2}(\/|\\|$)/g, "");
+    const sanitizedName = withoutTraversal.replace(/[<>:"\\|?*\x00-\x1F]/g, "_");
     return path.join(this.uploadsDir, sanitizedName);
   }
 
@@ -190,7 +193,7 @@ export class FilesystemStorageProvider implements StorageProvider {
 
     this.uploadTokens.set(token, { objectName, expiresAt });
 
-    return `/api/filesystem/upload/${token}`;
+    return `/filesystem/upload/${token}`;
   }
 
   async getPresignedGetUrl(objectName: string, expires: number, fileName?: string): Promise<string> {
@@ -199,7 +202,7 @@ export class FilesystemStorageProvider implements StorageProvider {
 
     this.downloadTokens.set(token, { objectName, expiresAt, fileName });
 
-    return `/api/filesystem/download/${token}`;
+    return `/filesystem/download/${token}`;
   }
 
   async deleteObject(objectName: string): Promise<void> {

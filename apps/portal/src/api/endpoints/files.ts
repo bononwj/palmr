@@ -76,13 +76,16 @@ export const filesApi = {
 
   checkFile: (body: CheckFileBody) => apiClient.post("/files/check", body),
 
-  getPresignedUrl: (filename: string, extension: string) =>
-    apiClient.get<PresignedUrlResponse>("/files/presigned-url", {
-      params: {
-        filename,
-        extension,
-      },
-    }),
+  getPresignedUrl: (filename: string, extension: string, folderId?: string | null) => {
+    const params: any = {
+      filename,
+      extension,
+    };
+    if (folderId) {
+      params.folderId = folderId;
+    }
+    return apiClient.get<PresignedUrlResponse>("/files/presigned-url", { params });
+  },
 
   registerFile: (body: CreateFileBody) =>
     apiClient.post<{ file: File }>("/files", body),

@@ -1,9 +1,43 @@
 import { z } from "zod";
 
+// Validate folder name - no special characters that would cause filesystem issues
+const INVALID_FOLDER_CHARS = /[<>:"/\\|?*\x00-\x1F]/;
+const RESERVED_NAMES = [
+  "CON",
+  "PRN",
+  "AUX",
+  "NUL",
+  "COM1",
+  "COM2",
+  "COM3",
+  "COM4",
+  "COM5",
+  "COM6",
+  "COM7",
+  "COM8",
+  "COM9",
+  "LPT1",
+  "LPT2",
+  "LPT3",
+  "LPT4",
+  "LPT5",
+  "LPT6",
+  "LPT7",
+  "LPT8",
+  "LPT9",
+];
+
 export const RegisterFolderSchema = z.object({
-  name: z.string().min(1, "O nome da pasta é obrigatório"),
+  name: z
+    .string()
+    .min(1, "Folder name is required")
+    .max(255, "Folder name is too long")
+    .refine((name) => !INVALID_FOLDER_CHARS.test(name), 'Folder name contains invalid characters: < > : " / \\ | ? *')
+    .refine((name) => name.trim() === name, "Folder name cannot start or end with spaces")
+    .refine((name) => !name.endsWith("."), "Folder name cannot end with a period")
+    .refine((name) => !RESERVED_NAMES.includes(name.toUpperCase()), "Folder name is a reserved system name"),
   description: z.string().optional(),
-  objectName: z.string().min(1, "O objectName é obrigatório"),
+  objectName: z.string().min(1, "Object name is required"),
   parentId: z.string().optional(),
 });
 

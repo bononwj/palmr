@@ -1,7 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Table, Button, Space, message, Modal, Breadcrumb } from "antd";
 import {
-  PlusOutlined,
   UploadOutlined,
   DownloadOutlined,
   DeleteOutlined,
@@ -23,6 +22,7 @@ import { foldersApi, type Folder } from "@/api/endpoints/folders";
 import { formatFileSize, formatDate } from "@/utils/format";
 import { downloadFile } from "@/utils/upload";
 import type { File } from "@/api/endpoints/files";
+import { useSearchParams } from "react-router-dom";
 
 // Combined type for files and folders display
 type FileSystemItem = (File | Folder) & {
@@ -41,6 +41,40 @@ export default function FilesPage() {
   const [downloadingFiles, setDownloadingFiles] = useState<Set<string>>(
     new Set(),
   );
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Sync currentFolderId from URL on load and when URL changes
+  useEffect(() => {
+    const fid = searchParams.get("folderId");
+    if (!fid) {
+      setCurrentFolderId(null);
+      setFolderPath([]);
+    } else if (fid !== currentFolderId) {
+      setCurrentFolderId(fid);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  // When currentFolderId changes, fetch full breadcrumb path
+  useEffect(() => {
+    let active = true;
+    const loadPath = async () => {
+      if (currentFolderId) {
+        try {
+          const res = await foldersApi.getFolderPath(currentFolderId);
+          if (active) setFolderPath(res.data.path || []);
+        } catch {
+          if (active) setFolderPath([]);
+        }
+      } else {
+        setFolderPath([]);
+      }
+    };
+    loadPath();
+    return () => {
+      active = false;
+    };
+  }, [currentFolderId]);
 
   // Fetch files in current folder
   const { data: filesData, isLoading: filesLoading } = useQuery({
@@ -133,15 +167,8 @@ export default function FilesPage() {
     if (currentFolderId === folder.id) {
       return;
     }
-
-    // Check if this folder is already in the path (shouldn't happen, but safety check)
-    const isAlreadyInPath = folderPath.some((f) => f.id === folder.id);
-    if (isAlreadyInPath) {
-      return;
-    }
-
     setCurrentFolderId(folder.id);
-    setFolderPath([...folderPath, folder]);
+    setSearchParams({ folderId: folder.id });
   };
 
   // Navigate to a specific folder in breadcrumb
@@ -149,12 +176,12 @@ export default function FilesPage() {
     if (index === -1) {
       // Go to root
       setCurrentFolderId(null);
-      setFolderPath([]);
+      setSearchParams({});
     } else {
       // Go to specific folder
       const targetFolder = folderPath[index];
       setCurrentFolderId(targetFolder.id);
-      setFolderPath(folderPath.slice(0, index + 1));
+      setSearchParams({ folderId: targetFolder.id });
     }
   };
 

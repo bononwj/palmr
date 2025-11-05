@@ -80,6 +80,10 @@
     "folderNameRequired": "Folder name is required",
     "folderNameTooLong": "Folder name is too long (max 255 characters)",
     "folderNamePlaceholder": "Enter folder name",
+    "folderNameInvalidChars": "Folder name contains invalid characters: < > : \" / \\ | ? *",
+    "folderNameNoSpaces": "Folder name cannot start or end with spaces",
+    "folderNameNoPeriod": "Folder name cannot end with a period",
+    "folderNameReserved": "This folder name is reserved by the system",
     "description": "Description",
     "descriptionPlaceholder": "Enter folder description (optional)"
   },

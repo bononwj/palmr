@@ -35,16 +35,23 @@ export async function uploadFile(options: ChunkedUploadOptions): Promise<void> {
   const { file, folderId, onProgress, onSuccess, onError } = options;
 
   try {
-    // Get file extension
-    const extension = file.name.split(".").pop() || "";
-    const filename = file.name.replace(`.${extension}`, "");
+    // Extract filename and extension
+    const fullFileName = file.name;
+    const lastDotIndex = fullFileName.lastIndexOf(".");
+    const filename =
+      lastDotIndex > 0 ? fullFileName.substring(0, lastDotIndex) : fullFileName;
+    const extension =
+      lastDotIndex > 0 ? fullFileName.substring(lastDotIndex + 1) : "";
 
-    // Step 1: Get presigned URL
+    // Step 1: Get presigned URL (with folderId for proper path structure)
     const presignedResponse = await filesApi.getPresignedUrl(
       filename,
       extension,
+      folderId,
     );
     const { url, objectName } = presignedResponse.data;
+
+    console.log(`📁 Uploading: ${fullFileName} → ${objectName}`);
 
     // Step 2: Upload file to presigned URL
     if (shouldUseChunkedUpload(file.size)) {
@@ -55,7 +62,7 @@ export async function uploadFile(options: ChunkedUploadOptions): Promise<void> {
 
     // Step 3: Register file in database
     await filesApi.registerFile({
-      name: file.name,
+      name: fullFileName,
       objectName,
       size: file.size,
       extension,
@@ -76,7 +83,6 @@ async function uploadDirect(
   url: string,
   onProgress?: (progress: UploadProgress) => void,
 ): Promise<void> {
-  console.log("url", url);
   // Use axios with baseURL config disabled for presigned URLs
   await axios.put(url, file, {
     baseURL: "/api-internal", // Override baseURL to use the presigned URL as-is
@@ -120,11 +126,14 @@ async function uploadChunked(
       baseURL: "/api-internal", // Override baseURL to use the presigned URL as-is
       headers: {
         "Content-Type": "application/octet-stream",
+        // Headers expected by the backend chunk handler
         "X-Chunk-Index": chunkIndex.toString(),
         "X-Total-Chunks": totalChunks.toString(),
+        "X-Chunk-Size": chunk.size.toString(),
+        "X-Total-Size": file.size.toString(),
+        "X-File-Name": encodeURIComponent(file.name),
+        "X-Is-Last-Chunk": (chunkIndex === totalChunks - 1).toString(),
         "X-File-Id": fileId,
-        "X-File-Size": file.size.toString(),
-        "X-Original-Name": file.name,
       },
     });
 
@@ -147,11 +156,15 @@ export async function downloadFile(
   fileName: string,
 ): Promise<void> {
   try {
-    const response = await filesApi.getDownloadUrl(objectName);
-    const downloadUrl = response.data.url;
+    // const response = await filesApi.getDownloadUrl(objectName);
+    // const downloadUrl = response.data.url;
+    const downloadUrl = `https://download.yipai360.com/files/${decodeURIComponent(
+      objectName,
+    )}`;
 
     // Create a temporary link and trigger download
     const link = document.createElement("a");
+    link.target = "_blank";
     link.href = downloadUrl;
     link.download = fileName;
     document.body.appendChild(link);

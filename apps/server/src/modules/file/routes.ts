@@ -24,10 +24,11 @@ export async function fileRoutes(app: FastifyInstance) {
         tags: ["File"],
         operationId: "getPresignedUrl",
         summary: "Get Presigned URL",
-        description: "Generates a pre-signed URL for direct upload to S3-compatible storage or local filesystem",
+        description: "Generates a pre-signed URL for direct upload to storage. Optionally scoped to a folder.",
         querystring: z.object({
           filename: z.string().min(1, "The filename is required").describe("The filename of the file"),
           extension: z.string().min(1, "The extension is required").describe("The extension of the file"),
+          folderId: z.string().optional().describe("The target folder ID to build a readable path"),
         }),
         response: {
           200: z.object({

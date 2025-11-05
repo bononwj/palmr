@@ -1,8 +1,8 @@
-import React from 'react';
-import { Modal, Form, Input, message } from 'antd';
-import { useTranslation } from 'react-i18next';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { foldersApi } from '@/api/endpoints/folders';
+import React from "react";
+import { Modal, Form, Input, message } from "antd";
+import { useTranslation } from "react-i18next";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { foldersApi } from "@/api/endpoints/folders";
 
 interface CreateFolderModalProps {
   visible: boolean;
@@ -26,10 +26,8 @@ export const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
 
   const createMutation = useMutation({
     mutationFn: (values: CreateFolderFormValues) => {
-      // Generate objectName based on timestamp and folder name
-      const timestamp = Date.now();
-      const safeName = values.name.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_');
-      const objectName = `folder_${timestamp}_${safeName}`;
+      // Use folder name as objectName (will be combined with parent path on backend)
+      const objectName = values.name;
 
       // Build request body, only include optional fields if they have values
       const requestBody: any = {
@@ -47,19 +45,18 @@ export const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
         requestBody.parentId = currentFolderId;
       }
 
-      console.log('Creating folder with body:', requestBody);
       return foldersApi.createFolder(requestBody);
     },
     onSuccess: (response) => {
-      message.success(response.data.message || t('folders.createSuccess'));
-      queryClient.invalidateQueries({ queryKey: ['files'] });
-      queryClient.invalidateQueries({ queryKey: ['folders'] });
+      message.success(response.data.message || t("folders.createSuccess"));
+      queryClient.invalidateQueries({ queryKey: ["files"] });
+      queryClient.invalidateQueries({ queryKey: ["folders"] });
       form.resetFields();
       onClose();
     },
     onError: (error: any) => {
-      console.error('Create folder failed:', error);
-      const errorMsg = error.response?.data?.error || t('folders.createFailed');
+      console.error("Create folder failed:", error);
+      const errorMsg = error.response?.data?.error || t("folders.createFailed");
       message.error(errorMsg);
     },
   });
@@ -77,37 +74,50 @@ export const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
 
   return (
     <Modal
-      title={t('folders.createFolder')}
+      title={t("folders.createFolder")}
       open={visible}
       onOk={handleOk}
       onCancel={handleCancel}
       confirmLoading={createMutation.isPending}
-      okText={t('common.create')}
-      cancelText={t('common.cancel')}
+      okText={t("common.create")}
+      cancelText={t("common.cancel")}
     >
-      <Form
-        form={form}
-        layout="vertical"
-        autoComplete="off"
-      >
-        <Form.Item
-          name="name"
-          label={t('folders.folderName')}
-          rules={[
-            { required: true, message: t('folders.folderNameRequired') },
-            { max: 255, message: t('folders.folderNameTooLong') },
-          ]}
-        >
-          <Input placeholder={t('folders.folderNamePlaceholder')} />
-        </Form.Item>
+        <Form form={form} layout="vertical" autoComplete="off">
+          <Form.Item
+            name="name"
+            label={t("folders.folderName")}
+            rules={[
+              { required: true, message: t("folders.folderNameRequired") },
+              { max: 255, message: t("folders.folderNameTooLong") },
+              {
+                pattern: /^[^<>:"/\\|?*\x00-\x1F]+$/,
+                message: t("folders.folderNameInvalidChars"),
+              },
+              {
+                validator: (_, value) => {
+                  if (!value) return Promise.resolve();
+                  if (value !== value.trim()) {
+                    return Promise.reject(new Error(t("folders.folderNameNoSpaces")));
+                  }
+                  if (value.endsWith('.')) {
+                    return Promise.reject(new Error(t("folders.folderNameNoPeriod")));
+                  }
+                  const reserved = ['CON', 'PRN', 'AUX', 'NUL', 'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9', 'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'];
+                  if (reserved.includes(value.toUpperCase())) {
+                    return Promise.reject(new Error(t("folders.folderNameReserved")));
+                  }
+                  return Promise.resolve();
+                },
+              },
+            ]}
+          >
+            <Input placeholder={t("folders.folderNamePlaceholder")} />
+          </Form.Item>
 
-        <Form.Item
-          name="description"
-          label={t('folders.description')}
-        >
+        <Form.Item name="description" label={t("folders.description")}>
           <Input.TextArea
             rows={3}
-            placeholder={t('folders.descriptionPlaceholder')}
+            placeholder={t("folders.descriptionPlaceholder")}
             maxLength={500}
           />
         </Form.Item>
@@ -115,4 +125,3 @@ export const CreateFolderModal: React.FC<CreateFolderModalProps> = ({
     </Modal>
   );
 };
-

@@ -24,9 +24,10 @@ export class FileController {
 
   async getPresignedUrl(request: FastifyRequest, reply: FastifyReply) {
     try {
-      const { filename, extension } = request.query as {
+      const { filename, extension, folderId } = request.query as {
         filename?: string;
         extension?: string;
+        folderId?: string;
       };
       if (!filename || !extension) {
         return reply.status(400).send({
@@ -39,7 +40,26 @@ export class FileController {
         return reply.status(401).send({ error: "Unauthorized: a valid token is required to access this resource." });
       }
 
-      const objectName = `${userId}/${Date.now()}-${filename}.${extension}`;
+      // Build objectName based on folder structure using readable username as root
+      // This makes the on-disk path human-friendly, e.g. username/Projects/Web/index.ts
+      const user = await prisma.user.findUnique({ where: { id: userId }, select: { username: true } });
+      const userRoot = user?.username || userId; // fallback to userId just in case
+
+      let objectName: string;
+
+      if (folderId) {
+        // Get folder path (readable folder names)
+        const { FolderService } = await import("../folder/service.js");
+        const folderService = new FolderService();
+        const folderPath = await folderService.getFolderPath(folderId, userId);
+
+        // Construct objectName: username/folderPath/filename.extension
+        objectName = `${userRoot}/${folderPath}/${filename}.${extension}`;
+      } else {
+        // Root level file: username/filename.extension
+        objectName = `${userRoot}/${filename}.${extension}`;
+      }
+
       const expires = parseInt(env.PRESIGNED_URL_EXPIRATION);
 
       const url = await this.fileService.getPresignedPutUrl(objectName, expires);
