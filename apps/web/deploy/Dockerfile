@@ -1,7 +1,7 @@
 FROM node:20-alpine
 
 # 安装 PM2
-RUN npm install -g pm2
+RUN npm install -g pm2 --registry https://registry.npmmirror.com
 
 # 设置工作目录
 WORKDIR /app
