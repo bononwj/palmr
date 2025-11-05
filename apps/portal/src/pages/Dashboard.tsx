@@ -10,7 +10,6 @@ import { useQuery } from "@tanstack/react-query";
 import { appApi } from "@/api/endpoints/app";
 import { filesApi } from "@/api/endpoints/files";
 import { sharesApi } from "@/api/endpoints/shares";
-import { formatFileSize } from "@/utils/format";
 
 export default function DashboardPage() {
   const { t } = useTranslation();

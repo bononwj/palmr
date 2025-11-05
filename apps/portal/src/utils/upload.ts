@@ -108,7 +108,7 @@ async function uploadDirect(
 async function uploadChunked(
   file: File,
   url: string,
-  objectName: string,
+  _objectName: string,
   onProgress?: (progress: UploadProgress) => void,
 ): Promise<void> {
   const chunkSize = calculateChunkSize(file.size);

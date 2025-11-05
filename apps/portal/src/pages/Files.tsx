@@ -350,7 +350,8 @@ export default function FilesPage() {
           <Table
             rowSelection={{
               selectedRowKeys,
-              onChange: setSelectedRowKeys,
+              onChange: (selectedRowKeys) =>
+                setSelectedRowKeys(selectedRowKeys as string[]),
             }}
             columns={columns}
             dataSource={fileSystemItems}
